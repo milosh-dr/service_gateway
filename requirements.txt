@@ -1,0 +1,11 @@
+astroid==3.0.0
+dill==0.3.7
+isort==5.12.0
+jedi==0.19.1
+mccabe==0.7.0
+parso==0.8.3
+platformdirs==3.11.0
+pylint==3.0.1
+tomli==2.0.1
+tomlkit==0.12.1
+typing_extensions==4.8.0
