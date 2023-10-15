@@ -1,4 +1,4 @@
-import os, requsts
+import os, requests
 
 def token(request):
     # Timestamp 2:01:30
