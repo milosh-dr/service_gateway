@@ -19,3 +19,11 @@ channel = connection.channel()
 def login():
     token, err = access.login(request)
     # timestamp 1:58:45
+    if not err:
+        return token
+    else:
+        return err
+    
+@server.route('/upload', methods=['POST'])
+def upload():
+    access, err = validate.token(request )
