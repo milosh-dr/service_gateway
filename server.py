@@ -1,3 +1,5 @@
+# Timestamp 4:19:18
+
 import os, gridfs, pika, json
 from flask import Flask, request
 from flask_pymongo import PyMongo
@@ -6,19 +8,19 @@ from auth_svc import access
 from storage import util
 
 server = Flask(__name__)
-server.config['MONGO_URI'] = 'http://localhost:27017/videos'
+server.config['MONGO_URI'] = 'mongodb://localhost:27017/videos'
 
 mongo = PyMongo(server)
 
 fs = gridfs.GridFS(mongo.db)
 
-connection = pika.BlockingConnection(pika.ConnectionParameters('rabitmq'))
+# Change the host if run in the cluster
+connection = pika.BlockingConnection(pika.ConnectionParameters('localhost'))
 channel = connection.channel()
 
 @server.route('/login', methods=['POST'])
 def login():
     token, err = access.login(request)
-    # timestamp 1:58:45
     if not err:
         return token
     else:
@@ -27,6 +29,8 @@ def login():
 @server.route('/upload', methods=['POST'])
 def upload():
     access, err = validate.token(request)
+    if not access:
+        return "Not authorized", 401
 
     access = json.loads(access)
     
