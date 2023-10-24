@@ -1,18 +1,20 @@
 # Timestamp 4:19:18
 
 import os, gridfs, pika, json
-from flask import Flask, request
+from flask import Flask, request, send_file
 from flask_pymongo import PyMongo
+from bson.objectid import ObjectId
 from auth import validate
 from auth_svc import access
 from storage import util
 
 server = Flask(__name__)
-server.config['MONGO_URI'] = 'mongodb://localhost:27017/videos'
 
-mongo = PyMongo(server)
+mongo_video = PyMongo(server, uri='mongodb://localhost:27017/videos')
+mongo_mp3 = PyMongo(server, uri='mongodb://localhost:27017/mp3s')
 
-fs = gridfs.GridFS(mongo.db)
+fs_videos= gridfs.GridFS(mongo_video.db)
+fs_mp3s = gridfs.GridFS(mongo_mp3.db)
 
 # Change the host if run in the cluster
 connection = pika.BlockingConnection(pika.ConnectionParameters('localhost'))
@@ -29,8 +31,8 @@ def login():
 @server.route('/upload', methods=['POST'])
 def upload():
     access, err = validate.token(request)
-    if not access:
-        return "Not authorized", 401
+    if err:
+        return err
 
     access = json.loads(access)
     
@@ -39,7 +41,7 @@ def upload():
             return "Upload only one file", 400
         
         for _, file in request.files.items():
-            err = util.upload(file, fs, channel, access)
+            err = util.upload(file, fs_videos, channel, access)
             if err:
                 return err
         
@@ -49,7 +51,24 @@ def upload():
     
 @server.route('/download', methods=['GET'])
 def download():
-    pass
+    access, err = validate.token(request)
+    if err:
+        return err
+
+    access = json.loads(access)
+
+    if access['admin']:
+        fid_string = request.args.get('fid')
+        if not fid_string:
+            return "Fid is required", 400
+        try:
+            out = fs_mp3s.get(ObjectId(fid_string))
+            return send_file(out, download_name=f'{fid_string}.mp3')
+        except Exception as err:
+            print(err)
+            return 'Internal server error', 500
+
+    return "Not authorized", 401
 
 if __name__ == '__main__':
     server.run(host='0.0.0.0', port=8080)
