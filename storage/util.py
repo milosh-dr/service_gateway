@@ -12,6 +12,12 @@ def upload(file, fs, channel, access):
         'username': access['username']
     }
 
+    # Testing using print
+    print('Testing succesful.')
+    print(f'Message to be sent:\n{message}')
+
+
+    # Commented out for testing
     try:
         channel.basic_publish(
             exchange='',
